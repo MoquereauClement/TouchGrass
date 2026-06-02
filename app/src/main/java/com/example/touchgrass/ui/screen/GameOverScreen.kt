@@ -11,8 +11,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -68,27 +70,46 @@ fun GameOverScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDeepBlack)
-            .padding(24.dp),
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(20.dp))
-        
-        Text(
-            text = "PARTIE TERMINÉE",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Black
-        )
+        // Top Bar Harmonisée
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+        ) {
+            IconButton(
+                onClick = onBackToMenu,
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.CenterStart)
+                    .background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape)
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Menu", tint = Color.White)
+            }
 
-        Spacer(modifier = Modifier.weight(0.3f))
+            Text(
+                text = "Bilan",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(0.1f))
 
         // Score final
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("SCORE FINAL", color = Color.Gray, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Text("$totalScore", color = Color(0xFF4CAF50), fontSize = 100.sp, fontWeight = FontWeight.Black)
+            Text("SCORE FINAL", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("$totalScore", color = Color(0xFF4CAF50), fontSize = 80.sp, fontWeight = FontWeight.Black)
         }
 
-        Spacer(modifier = Modifier.weight(0.3f))
+        Spacer(modifier = Modifier.weight(0.1f))
 
         // Code de partie
         gameSeed?.let { seed ->
@@ -98,7 +119,10 @@ fun GameOverScreen(
                 shape = RoundedCornerShape(20.dp),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
             ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("CODE DE LA PARTIE", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         Text("$seed", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
@@ -118,7 +142,7 @@ fun GameOverScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(BackgroundMediumBlack)
                 .padding(4.dp)
         ) {
@@ -158,10 +182,10 @@ fun GameOverScreen(
         Button(
             onClick = onBackToMenu,
             colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(64.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("RETOUR AU MENU", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("RETOUR AU MENU", fontWeight = FontWeight.Black, fontSize = 16.sp)
         }
     }
 }
@@ -170,20 +194,20 @@ fun GameOverScreen(
 fun RankTab(text: String, isSelected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(if (isSelected) Primary else Color.Transparent)
             .clickable { onClick() }
-            .padding(vertical = 8.dp),
+            .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = if (isSelected) Color.White else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(text, color = if (isSelected) Color.White else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Black)
     }
 }
 
 @Composable
 fun LeaderboardRow(rank: Int, name: String, score: Long, isMe: Boolean) {
     Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text = "#$rank", color = if (rank <= 3) Primary else Color.Gray, fontWeight = FontWeight.Bold, modifier = Modifier.width(32.dp))
+        Text(text = "#$rank", color = if (rank <= 3) Primary else Color.Gray, fontWeight = FontWeight.Black, modifier = Modifier.width(40.dp))
         Text(text = if (isMe) "$name (Moi)" else name, color = if (isMe) Primary else Color.White, fontWeight = if (isMe) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
         Text(text = "$score", color = Color.White, fontWeight = FontWeight.Black)
     }

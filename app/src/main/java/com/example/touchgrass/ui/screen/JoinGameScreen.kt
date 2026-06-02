@@ -35,46 +35,47 @@ fun JoinGameScreen(
             .fillMaxSize()
             .background(BackgroundDeepBlack)
             .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Barre supérieure
+        // Top Bar Harmonisée
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 48.dp)
+                .height(64.dp)
         ) {
             IconButton(
                 onClick = onBack,
                 modifier = Modifier
+                    .size(48.dp)
                     .align(Alignment.CenterStart)
-                    .background(BackgroundMediumBlack, CircleShape)
+                    .background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape)
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Retour",
-                    tint = Color.White
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour", tint = Color.White)
             }
 
             Text(
                 text = "Rejoindre",
                 color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
                 modifier = Modifier.align(Alignment.Center)
             )
         }
 
+        Spacer(modifier = Modifier.height(48.dp))
+
         Text(
             text = "Entrez la clé de la partie fournie par l'hôte.",
-            color = Color.White,
+            color = Color.Gray,
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
-            modifier = Modifier
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 48.dp)
+            modifier = Modifier.padding(horizontal = 24.dp)
         )
+
+        Spacer(modifier = Modifier.height(48.dp))
 
         // Champ de saisie du code
         OutlinedTextField(
@@ -83,12 +84,13 @@ fun JoinGameScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp),
             placeholder = {
                 Text(
-                    "Entre la clé",
-                    color = Color.Gray,
+                    "6 CHIFFRES",
+                    color = Color.Gray.copy(alpha = 0.5f),
                     fontSize = 18.sp,
+                    fontWeight = FontWeight.Black,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -98,15 +100,13 @@ fun JoinGameScreen(
                     painter = painterResource(id = R.drawable.qr_code),
                     contentDescription = "Scanner QR",
                     tint = IconsColor,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .padding(end = 8.dp) // Pour atteindre 20dp de padding (12dp par défaut + 8dp)
+                    modifier = Modifier.size(28.dp).padding(end = 8.dp)
                 )
             },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = BackgroundMediumBlack,
                 unfocusedContainerColor = BackgroundMediumBlack,
-                focusedBorderColor = ScreenBorder,
+                focusedBorderColor = Primary,
                 unfocusedBorderColor = ScreenBorder,
                 cursorColor = Primary,
                 focusedTextColor = Color.White,
@@ -116,12 +116,13 @@ fun JoinGameScreen(
             singleLine = true,
             textStyle = LocalTextStyle.current.copy(
                 textAlign = TextAlign.Center,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 4.sp
             )
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.weight(1f))
 
         // Bouton Confirmer
         Button(
@@ -135,25 +136,26 @@ fun JoinGameScreen(
                 containerColor = Primary,
                 disabledContainerColor = Primary.copy(alpha = 0.5f)
             ),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             enabled = gameCode.length == 6
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Confirmer",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
+                    text = "REJOINDRE LA PARTIE",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
                     color = Color.White
                 )
+                Spacer(modifier = Modifier.width(12.dp))
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Login,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

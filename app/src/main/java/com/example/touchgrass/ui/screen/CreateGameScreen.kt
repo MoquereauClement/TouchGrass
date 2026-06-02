@@ -48,7 +48,6 @@ fun CreateGameScreen(
     val username by profileViewModel.username.collectAsState()
     val lobby by lobbyViewModel.currentLobby.collectAsState()
     
-    // États des réglages
     var showSettings by remember { mutableStateOf(false) }
     var maxPlayers by remember { mutableIntStateOf(8) }
     var rounds by remember { mutableIntStateOf(5) }
@@ -56,7 +55,6 @@ fun CreateGameScreen(
     var selectedMode by remember { mutableStateOf("Normal") }
     var selectedFeature by remember { mutableStateOf("Normal") }
 
-    // Création/Mise à jour du lobby au chargement et changement de paramètres
     LaunchedEffect(gameSeed, username, maxPlayers, rounds, timePerRound, selectedMode, selectedFeature) {
         if (username.isNotEmpty()) {
             lobbyViewModel.createOrUpdateLobby(
@@ -74,7 +72,6 @@ fun CreateGameScreen(
         }
     }
 
-    // Surveiller si la partie est lancée (utile pour les invités, mais ici on est l'hôte)
     LaunchedEffect(lobby?.isStarted) {
         if (lobby?.isStarted == true) {
             val settings = GameSettings(
@@ -92,84 +89,68 @@ fun CreateGameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Barre supérieure
+            // Top Bar Harmonisée
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp)
+                    .height(64.dp)
             ) {
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
+                        .size(48.dp)
                         .align(Alignment.CenterStart)
-                        .background(BackgroundMediumBlack, CircleShape)
+                        .background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape)
+                        .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Retour",
-                        tint = Color.White
-                    )
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour", tint = Color.White)
                 }
 
                 Text(
                     text = "Salon de jeu",
                     color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
             Text(
                 text = "Code d'invitation :",
                 color = Color.Gray,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(bottom = 16.dp)
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Card du code
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(BackgroundMediumBlack)
-                    .border(1.dp, ScreenBorder, RoundedCornerShape(16.dp))
+                    .border(1.dp, ScreenBorder, RoundedCornerShape(20.dp))
                     .padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.qr_code),
-                    contentDescription = "QR Code",
-                    tint = IconsColor,
-                    modifier = Modifier.size(28.dp)
-                )
-
-                Text(
-                    text = gameSeed.toString(),
-                    color = Color.White,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 4.sp
-                )
-
-                Icon(
-                    painter = painterResource(id = R.drawable.clipboard),
-                    contentDescription = "Copier",
-                    tint = IconsColor,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = ClipData.newPlainText("Game Code", gameSeed.toString())
-                            clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, "Code copié !", Toast.LENGTH_SHORT).show()
-                        }
-                )
+                Icon(painterResource(id = R.drawable.qr_code), null, tint = IconsColor, modifier = Modifier.size(28.dp))
+                Text(text = gameSeed.toString(), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
+                IconButton(onClick = {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Game Code", gameSeed.toString()))
+                    Toast.makeText(context, "Code copié !", Toast.LENGTH_SHORT).show()
+                }) {
+                    Icon(painterResource(id = R.drawable.clipboard), null, tint = IconsColor, modifier = Modifier.size(24.dp))
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -190,27 +171,11 @@ fun CreateGameScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "JOUEURS DANS LE SALON",
-                            color = Secondaire,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.sp
-                        )
-                        Text(
-                            text = "${lobby?.players?.size ?: 1}/$maxPlayers",
-                            color = Color.Gray,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text("JOUEURS", color = Secondaire, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                        Text("${lobby?.players?.size ?: 1}/$maxPlayers", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
-                    
                     Spacer(modifier = Modifier.height(16.dp))
-                    
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         val players = lobby?.players ?: listOf(username)
                         items(players) { player ->
                             PlayerRow(player, isHost = player == lobby?.host || (lobby == null && player == username))
@@ -226,43 +191,31 @@ fun CreateGameScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(BackgroundMediumBlack)
-                    .border(1.dp, ScreenBorder, RoundedCornerShape(12.dp))
+                    .border(1.dp, ScreenBorder, RoundedCornerShape(16.dp))
                     .clickable { showSettings = true }
                     .padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(text = "Réglages de la partie", color = Color.White, fontSize = 16.sp)
-                    Text(text = "$rounds rounds • ${timePerRound.toInt()}s • $selectedMode", color = Color.Gray, fontSize = 12.sp)
+                    Text("Réglages de la partie", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("$rounds rounds • ${timePerRound.toInt()}s • $selectedMode", color = Color.Gray, fontSize = 12.sp)
                 }
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = null,
-                    tint = IconsColor,
-                    modifier = Modifier.size(24.dp)
-                )
+                Icon(Icons.Default.Settings, null, tint = IconsColor, modifier = Modifier.size(24.dp))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Bouton Lancer
             Button(
                 onClick = { lobbyViewModel.startLobby(gameSeed.toString()) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
+                modifier = Modifier.fillMaxWidth().height(64.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 enabled = username.isNotEmpty()
             ) {
-                Text(
-                    text = "Lancer la partie multi",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("LANCER LA PARTIE", fontSize = 16.sp, fontWeight = FontWeight.Black)
             }
         }
 
@@ -290,49 +243,6 @@ fun CreateGameScreen(
 }
 
 @Composable
-fun PlayerRow(name: String, isHost: Boolean) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.05f))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(if (isHost) Primary else Color.Gray),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (isHost) Icons.Default.Star else Icons.Default.Person,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = name,
-            color = Color.White,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.weight(1f)
-        )
-        if (isHost) {
-            Text(
-                text = "HÔTE",
-                color = Primary,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black
-            )
-        }
-    }
-}
-
-@Composable
 fun SettingsOverlay(
     currentMode: String,
     onModeChange: (String) -> Unit,
@@ -351,38 +261,38 @@ fun SettingsOverlay(
             .fillMaxSize()
             .background(BackgroundDeepBlack)
             .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // Barre supérieure
+        // Top Bar Harmonisée
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp)
+                .height(64.dp)
         ) {
             IconButton(
                 onClick = onClose,
                 modifier = Modifier
+                    .size(48.dp)
                     .align(Alignment.CenterStart)
-                    .background(BackgroundMediumBlack, CircleShape)
+                    .background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape)
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Retour",
-                    tint = Color.White
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour", tint = Color.White)
             }
 
             Text(
                 text = "Réglages",
                 color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
                 modifier = Modifier.align(Alignment.Center)
             )
         }
 
-        // Section Mode
-        SettingLabel("Mode")
+        Spacer(modifier = Modifier.height(24.dp))
+
+        SettingLabel("Mode de jeu")
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SelectableButton("Normal", currentMode == "Normal", Modifier.weight(1f)) { onModeChange("Normal") }
             SelectableButton("Fun", currentMode == "Fun", Modifier.weight(1f)) { onModeChange("Fun") }
@@ -390,28 +300,17 @@ fun SettingsOverlay(
 
         HorizontalDivider(Modifier.padding(vertical = 24.dp), color = ScreenBorder)
 
-        // Section Rounds
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SettingLabel("Round", padding = 0.dp)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            SettingLabel("Rounds", padding = 0.dp)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularIconButton(Icons.Default.Remove) { if (rounds > 1) onRoundsChange(rounds - 1) }
-                Text(
-                    text = rounds.toString(),
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                Text(rounds.toString(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 16.dp))
                 CircularIconButton(Icons.Default.Add) { if (rounds < 10) onRoundsChange(rounds + 1) }
             }
         }
 
         HorizontalDivider(Modifier.padding(vertical = 24.dp), color = ScreenBorder)
 
-        // Section Temps
         SettingLabel("Temps par round")
         Row(verticalAlignment = Alignment.CenterVertically) {
             Slider(
@@ -423,26 +322,16 @@ fun SettingsOverlay(
                 colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
             )
             Spacer(modifier = Modifier.width(16.dp))
-            Text(text = "${time}s", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.width(40.dp))
+            Text("${time}s", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.width(45.dp))
         }
 
         HorizontalDivider(Modifier.padding(vertical = 24.dp), color = ScreenBorder)
 
-        // Section Max Joueurs
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             SettingLabel("Max Joueurs", padding = 0.dp)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularIconButton(Icons.Default.Remove) { if (maxPlayers > 2) onMaxPlayersChange(maxPlayers - 1) }
-                Text(
-                    text = maxPlayers.toString(),
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                Text(maxPlayers.toString(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 16.dp))
                 CircularIconButton(Icons.Default.Add) { if (maxPlayers < 20) onMaxPlayersChange(maxPlayers + 1) }
             }
         }
@@ -453,22 +342,16 @@ fun SettingsOverlay(
             onClick = onClose,
             modifier = Modifier.fillMaxWidth().height(64.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Enregistrer les réglages", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("ENREGISTRER", fontSize = 16.sp, fontWeight = FontWeight.Black)
         }
     }
 }
 
 @Composable
 fun SettingLabel(text: String, padding: androidx.compose.ui.unit.Dp = 16.dp) {
-    Text(
-        text = text,
-        color = Color.Gray,
-        fontSize = 14.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(bottom = padding)
-    )
+    Text(text, color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.padding(bottom = padding))
 }
 
 @Composable
@@ -482,7 +365,7 @@ fun SelectableButton(text: String, isSelected: Boolean, modifier: Modifier = Mod
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Text(text = text, color = Color.White, fontWeight = FontWeight.Bold)
+        Text(text, color = Color.White, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -497,6 +380,28 @@ fun CircularIconButton(icon: androidx.compose.ui.graphics.vector.ImageVector, on
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+fun PlayerRow(name: String, isHost: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.05f))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.size(32.dp).clip(CircleShape).background(if (isHost) Primary else Color.Gray),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(if (isHost) Icons.Default.Star else Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(18.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        if (isHost) Text("HÔTE", color = Primary, fontSize = 10.sp, fontWeight = FontWeight.Black)
     }
 }

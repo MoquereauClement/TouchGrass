@@ -4,11 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
+import androidx.compose.ui.draw.scale
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +38,8 @@ fun MenuScreen(
     onLogout: () -> Unit
 ) {
     val username by profileViewModel.username.collectAsState()
-    var showJoinDialog by remember { mutableStateOf(false) }
     var showProfileDialog by remember { mutableStateOf(false) }
+    var showJoinDialog by remember { mutableStateOf(false) }
     var tempUsername by remember { mutableStateOf(username) }
     var gameCode by remember { mutableStateOf("") }
 
@@ -46,9 +48,10 @@ fun MenuScreen(
             .fillMaxSize()
             .background(BackgroundDeepBlack)
             .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // Barre supérieure alignée horizontalement et verticalement
+        // Barre supérieure harmonisée (64dp)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -61,7 +64,8 @@ fun MenuScreen(
                 contentDescription = "Logo",
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(54.dp)
+                    .scale(1.6f)
                     .align(Alignment.CenterStart)
             )
 
@@ -69,18 +73,20 @@ fun MenuScreen(
             Text(
                 text = "TouchGrass",
                 color = Color.White,
-                fontSize = 26.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.align(Alignment.Center)
             )
 
-            // Profil à droite
             Row(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .clip(RoundedCornerShape(20.dp))
                     .background(BackgroundMediumBlack)
-                    .clickable { showProfileDialog = true }
+                    .clickable { 
+                        tempUsername = username
+                        showProfileDialog = true 
+                    }
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -110,16 +116,14 @@ fun MenuScreen(
                 .fillMaxWidth()
                 .align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             MenuButton(
                 title = "Singleplayer",
-                subtitle = "Explorer le monde tout seul",
+                subtitle = "Explorer le monde en solo",
                 iconRes = R.drawable.iconssingleplayer,
                 onClick = onSingleplayerClick
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             MenuButton(
                 title = "Jouer une seed",
@@ -128,48 +132,48 @@ fun MenuScreen(
                 onClick = { showJoinDialog = true }
             )
 
-            // Grand spacer entre les 2 groupes
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             MenuButton(
-                title = "Créer une partie",
-                subtitle = "Générer un code pour inviter",
+                title = "Créer un salon",
+                subtitle = "Inviter des amis en multi",
                 iconRes = R.drawable.iconsadd,
                 onClick = onCreateGameClick
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             MenuButton(
-                title = "Rejoindre une partie",
+                title = "Rejoindre un salon",
                 subtitle = "Saisir un code d'invitation",
                 iconRes = R.drawable.iconsenter,
                 onClick = onJoinGameClick
             )
         }
 
-        // Username Dialog
+        // Boîte de dialogue Profil
         if (showProfileDialog) {
             AlertDialog(
                 onDismissRequest = { showProfileDialog = false },
                 containerColor = BackgroundMediumBlack,
-                title = { Text("Votre Nom de Joueur", color = Color.White, fontWeight = FontWeight.Black) },
+                shape = RoundedCornerShape(24.dp),
+                title = { Text("Modifier le profil", color = Color.White, fontWeight = FontWeight.Black) },
                 text = {
-                    OutlinedTextField(
-                        value = tempUsername,
-                        onValueChange = { tempUsername = it },
-                        label = { Text("Pseudo") },
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = ScreenBorder,
-                            focusedLabelColor = Primary,
-                            unfocusedLabelColor = Color.Gray,
-                            cursorColor = Primary,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                    Column {
+                        Text("Entrez votre nouveau pseudo :", color = Color.Gray, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = tempUsername,
+                            onValueChange = { tempUsername = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = ScreenBorder,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         )
-                    )
+                    }
                 },
                 confirmButton = {
                     Button(
@@ -179,25 +183,30 @@ fun MenuScreen(
                                 showProfileDialog = false
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                        enabled = tempUsername.isNotBlank()
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
                     ) {
-                        Text("VALIDER", fontWeight = FontWeight.Bold)
+                        Text("VALIDER", fontWeight = FontWeight.Black)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showProfileDialog = false }) {
+                        Text("ANNULER", color = Color.Gray)
                     }
                 }
             )
         }
 
-        // Join Game Dialog
+        // Boîte de dialogue Jouer une Seed
         if (showJoinDialog) {
             AlertDialog(
                 onDismissRequest = { showJoinDialog = false },
                 containerColor = BackgroundMediumBlack,
+                shape = RoundedCornerShape(24.dp),
                 title = {
                     Text(
                         "Jouer une seed",
                         color = Color.White,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -217,7 +226,7 @@ fun MenuScreen(
                             textStyle = TextStyle(
                                 color = Color.White,
                                 fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.Black,
                                 textAlign = TextAlign.Center
                             ),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -244,34 +253,28 @@ fun MenuScreen(
                         enabled = gameCode.length == 6,
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("REJOINDRE", fontWeight = FontWeight.Bold)
+                        Text("REJOINDRE", fontWeight = FontWeight.Black)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showJoinDialog = false }) {
                         Text("ANNULER", color = Color.Gray)
                     }
-                },
-                shape = RoundedCornerShape(24.dp)
+                }
             )
         }
     }
 }
 
 @Composable
-fun MenuButton(
-    title: String,
-    subtitle: String,
-    iconRes: Int,
-    onClick: () -> Unit
-) {
+fun MenuButton(title: String, subtitle: String, iconRes: Int, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .height(84.dp)
+            .clip(RoundedCornerShape(20.dp))
             .background(BackgroundMediumBlack)
-            .border(1.dp, ScreenBorder, RoundedCornerShape(16.dp))
+            .border(1.dp, ScreenBorder, RoundedCornerShape(20.dp))
             .clickable { onClick() }
             .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -279,33 +282,14 @@ fun MenuButton(
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .background(Background, RoundedCornerShape(12.dp)),
+                .background(BackgroundDeepBlack, RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = null,
-                tint = Primary,
-                modifier = Modifier.size(28.dp)
-            )
+            Icon(painterResource(id = iconRes), null, tint = Primary, modifier = Modifier.size(24.dp))
         }
-
-        Column(
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .weight(1f)
-        ) {
-            Text(
-                text = title,
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = subtitle,
-                color = IconsColor,
-                fontSize = 12.sp
-            )
+        Column(modifier = Modifier.padding(start = 16.dp)) {
+            Text(title, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = Color.Gray, fontSize = 12.sp)
         }
     }
 }

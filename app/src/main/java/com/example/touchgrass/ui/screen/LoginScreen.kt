@@ -37,9 +37,10 @@ fun LoginScreen(
             .fillMaxSize()
             .background(BackgroundDeepBlack)
             .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // Top Bar - Alignée (Exactement comme dans le MenuScreen)
+        // Top Bar - Alignée
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -93,7 +94,8 @@ fun LoginScreen(
                     focusedLabelColor = Primary,
                     unfocusedLabelColor = Color.Gray,
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    unfocusedTextColor = Color.White,
+                    errorBorderColor = Color.Red
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -116,7 +118,8 @@ fun LoginScreen(
                     focusedLabelColor = Primary,
                     unfocusedLabelColor = Color.Gray,
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    unfocusedTextColor = Color.White,
+                    errorBorderColor = Color.Red
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -129,37 +132,37 @@ fun LoginScreen(
                     modifier = Modifier.padding(top = 8.dp).align(Alignment.Start)
                 )
             }
+        }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    if (email.isNotBlank() && username.isNotBlank()) {
-                        isLoading = true
-                        scope.launch {
-                            val redundancyError = profileViewModel.checkUserRedundancy(email.trim(), username.trim())
-                            if (redundancyError == null) {
-                                profileViewModel.login(email.trim(), username.trim())
-                                onLoginSuccess()
-                            } else {
-                                errorMessage = redundancyError
-                            }
-                            isLoading = false
+        Button(
+            onClick = {
+                if (email.isNotBlank() && username.isNotBlank()) {
+                    isLoading = true
+                    scope.launch {
+                        val redundancyError = profileViewModel.checkUserRedundancy(email.trim(), username.trim())
+                        if (redundancyError == null) {
+                            profileViewModel.login(email.trim(), username.trim())
+                            onLoginSuccess()
+                        } else {
+                            errorMessage = redundancyError
                         }
+                        isLoading = false
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                shape = RoundedCornerShape(16.dp),
-                enabled = email.isNotBlank() && username.isNotBlank() && !isLoading
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                } else {
-                    Text("SE CONNECTER / S'INSCRIRE", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                 }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+                .height(64.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+            shape = RoundedCornerShape(16.dp),
+            enabled = email.isNotBlank() && username.isNotBlank() && !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            } else {
+                Text("SE CONNECTER / S'INSCRIRE", fontSize = 16.sp, fontWeight = FontWeight.Black)
             }
         }
     }

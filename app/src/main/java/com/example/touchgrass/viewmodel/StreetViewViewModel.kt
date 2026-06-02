@@ -11,6 +11,8 @@ import com.example.touchgrass.repository.GameRepository
 import com.example.touchgrass.service.StreetViewService
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,8 +73,13 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
     private val _maxRounds = MutableStateFlow(5)
     val maxRounds: StateFlow<Int> = _maxRounds.asStateFlow()
     
-    private val _timeLimit = MutableStateFlow(30)
+    private val _timeLimit = MutableStateFlow(60)
     val timeLimit: StateFlow<Int> = _timeLimit.asStateFlow()
+
+    private val _timeLeft = MutableStateFlow(60)
+    val timeLeft: StateFlow<Int> = _timeLeft.asStateFlow()
+
+    private var timerJob: Job? = null
     
     private var currentRetryCount = 0
 
@@ -151,6 +158,7 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
         val finalSettings = settings ?: GameSettings()
         _maxRounds.value = finalSettings.rounds
         _timeLimit.value = finalSettings.timeLimit
+        _timeLeft.value = finalSettings.timeLimit
         
         // Si c'est une nouvelle partie solo sans settings, on enregistre les par défaut pour le partage
         if (settings == null) {
@@ -160,6 +168,21 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
         }
         
         generateRandomLocation()
+        startTimer()
+    }
+
+    fun startTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (_timeLeft.value > 0) {
+                delay(1000L)
+                _timeLeft.value -= 1
+            }
+        }
+    }
+
+    fun stopTimer() {
+        timerJob?.cancel()
     }
 
     fun saveAndStartGame(seed: Long, settings: GameSettings) {
@@ -188,6 +211,13 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
         _targetLocation.value = location.coordinates
         _currentCountry.value = location.countryName
         _userCurrentLocation.value = null 
+
+        // LOG POUR LA PRÉSENTATION (TRICHE FACILE)
+        Log.d("TOUCHGRASS_DEBUG", "--------------------------------------")
+        Log.d("TOUCHGRASS_DEBUG", "CIBLE ROUND ${_round.value} :")
+        Log.d("TOUCHGRASS_DEBUG", "Lat: ${location.coordinates.latitude}, Lng: ${location.coordinates.longitude}")
+        Log.d("TOUCHGRASS_DEBUG", "Lien: https://www.google.com/maps/@${location.coordinates.latitude},${location.coordinates.longitude},18z")
+        Log.d("TOUCHGRASS_DEBUG", "--------------------------------------")
     }
     
     fun handleNoPanorama() {
@@ -196,17 +226,20 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun calculatePoints(distanceInKm: Double): Int {
-        if (distanceInKm >= 7000.0) return 0
-        val points = 5000.0 * exp(-0.0008 * distanceInKm)
-        return points.toInt().coerceIn(0, 5000)
+        // Courbe GeoGuessr équilibrée
+        val points = 5000.0 * exp(-0.0006 * distanceInKm)
+        return if (distanceInKm > 15000.0) 0 else points.toInt().coerceIn(0, 5000)
     }
 
     fun completeRound(roundPoints: Int) {
+        stopTimer()
         _totalScore.value += roundPoints
         if (_round.value < _maxRounds.value) {
             _round.value += 1
             currentRetryCount = 0
+            _timeLeft.value = _timeLimit.value
             generateRandomLocation()
+            startTimer()
         }
     }
 
