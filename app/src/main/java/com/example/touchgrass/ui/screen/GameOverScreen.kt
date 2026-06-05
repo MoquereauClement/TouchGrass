@@ -3,6 +3,7 @@ package com.example.touchgrass.ui.screen
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +34,9 @@ import com.example.touchgrass.viewmodel.LeaderboardViewModel
 import com.example.touchgrass.viewmodel.ProfileViewModel
 import com.example.touchgrass.ui.theme.*
 
+/**
+ * Écran final qui affiche le score total et le classement (Leaderboard).
+ */
 @Composable
 fun GameOverScreen(
     streetViewModel: StreetViewViewModel = viewModel(),
@@ -75,12 +80,7 @@ fun GameOverScreen(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Bar Harmonisée
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxWidth().height(64.dp)) {
             IconButton(
                 onClick = onBackToMenu,
                 modifier = Modifier
@@ -103,7 +103,6 @@ fun GameOverScreen(
 
         Spacer(modifier = Modifier.weight(0.1f))
 
-        // Score final
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("SCORE FINAL", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Text("$totalScore", color = Color(0xFF4CAF50), fontSize = 80.sp, fontWeight = FontWeight.Black)
@@ -111,7 +110,6 @@ fun GameOverScreen(
 
         Spacer(modifier = Modifier.weight(0.1f))
 
-        // Code de partie
         gameSeed?.let { seed ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -119,26 +117,33 @@ fun GameOverScreen(
                 shape = RoundedCornerShape(20.dp),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("CODE DE LA PARTIE", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         Text("$seed", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                     }
-                    IconButton(onClick = {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("Game Seed", seed.toString()))
-                        Toast.makeText(context, "Code copié !", Toast.LENGTH_SHORT).show()
-                    }) { Icon(Icons.Default.ContentCopy, null, tint = Color.White) }
+                    Row {
+                        IconButton(onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Game Seed", seed.toString()))
+                            Toast.makeText(context, "Code copié !", Toast.LENGTH_SHORT).show()
+                        }) { Icon(Icons.Default.ContentCopy, null, tint = Color.White) }
+
+                        IconButton(onClick = {
+                            val shareIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, "Je viens de faire un score de $totalScore sur TouchGrass ! Rejoue la même partie ici : https://touchgrass-86df1.web.app/join/$seed")
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Partager le score"))
+                        }) { Icon(Icons.Default.Share, null, tint = Color.White) }
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Sélecteur de Classement
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -152,7 +157,6 @@ fun GameOverScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Liste du classement
         Box(
             modifier = Modifier
                 .weight(1f)

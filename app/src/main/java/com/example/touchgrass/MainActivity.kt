@@ -51,7 +51,8 @@ class MainActivity : ComponentActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_VIEW) {
             val data = intent.data
-            if (data != null && data.host == "touchgrass.app") {
+            // Mise à jour du host pour correspondre au lien Firebase Hosting
+            if (data != null && (data.host == "touchgrass-86df1.web.app" || data.host == "touchgrass.app")) {
                 val path = data.path ?: ""
                 if (path.startsWith("/join")) {
                     initialSeed = data.lastPathSegment

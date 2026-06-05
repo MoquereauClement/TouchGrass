@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.sp
 import com.example.touchgrass.R
 import com.example.touchgrass.ui.theme.*
 
+/**
+ * Écran pour rejoindre un salon multijoueur via un code à 6 chiffres.
+ */
 @Composable
 fun JoinGameScreen(
     onBack: () -> Unit,
@@ -39,11 +42,9 @@ fun JoinGameScreen(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Bar Harmonisée
+        // Barre supérieure avec bouton retour
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
+            modifier = Modifier.fillMaxWidth().height(64.dp)
         ) {
             IconButton(
                 onClick = onBack,
@@ -71,44 +72,23 @@ fun JoinGameScreen(
             text = "Entrez la clé de la partie fournie par l'hôte.",
             color = Color.Gray,
             fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp)
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Champ de saisie du code
+        // Champ de saisie optimisé pour les chiffres
         OutlinedTextField(
             value = gameCode,
             onValueChange = { if (it.length <= 6) gameCode = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp),
+            modifier = Modifier.fillMaxWidth().height(80.dp),
             shape = RoundedCornerShape(20.dp),
             placeholder = {
-                Text(
-                    "6 CHIFFRES",
-                    color = Color.Gray.copy(alpha = 0.5f),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-            },
-            trailingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.qr_code),
-                    contentDescription = "Scanner QR",
-                    tint = IconsColor,
-                    modifier = Modifier.size(28.dp).padding(end = 8.dp)
-                )
+                Text("6 CHIFFRES", color = Color.Gray.copy(alpha = 0.5f), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
             },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = BackgroundMediumBlack,
                 unfocusedContainerColor = BackgroundMediumBlack,
-                focusedBorderColor = Primary,
-                unfocusedBorderColor = ScreenBorder,
-                cursorColor = Primary,
                 focusedTextColor = Color.White,
                 unfocusedTextColor = Color.White
             ),
@@ -124,39 +104,20 @@ fun JoinGameScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Bouton Confirmer
+        // Bouton de validation
         Button(
             onClick = {
                 gameCode.toLongOrNull()?.let { onJoinGame(it) }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Primary,
-                disabledContainerColor = Primary.copy(alpha = 0.5f)
-            ),
+            modifier = Modifier.fillMaxWidth().height(64.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Primary),
             shape = RoundedCornerShape(16.dp),
             enabled = gameCode.length == 6
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "REJOINDRE LA PARTIE",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color.White
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("REJOINDRE LA PARTIE", fontWeight = FontWeight.Black)
                 Spacer(modifier = Modifier.width(12.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Login,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                Icon(Icons.AutoMirrored.Filled.Login, null, modifier = Modifier.size(20.dp))
             }
         }
     }

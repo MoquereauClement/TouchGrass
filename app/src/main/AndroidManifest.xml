@@ -29,11 +29,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Android App Links -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="touchgrass.app" android:pathPrefix="/join" />
+                <data android:scheme="https" android:host="touchgrass-86df1.web.app" android:pathPrefix="/join" />
             </intent-filter>
         </activity>
         <meta-data

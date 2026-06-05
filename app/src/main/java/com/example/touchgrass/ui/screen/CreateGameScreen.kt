@@ -51,11 +51,10 @@ fun CreateGameScreen(
     var showSettings by remember { mutableStateOf(false) }
     var maxPlayers by remember { mutableIntStateOf(8) }
     var rounds by remember { mutableIntStateOf(5) }
-    var timePerRound by remember { mutableFloatStateOf(30f) }
+    var timePerRound by remember { mutableFloatStateOf(60f) }
     var selectedMode by remember { mutableStateOf("Normal") }
-    var selectedFeature by remember { mutableStateOf("Normal") }
 
-    LaunchedEffect(gameSeed, username, maxPlayers, rounds, timePerRound, selectedMode, selectedFeature) {
+    LaunchedEffect(gameSeed, username, maxPlayers, rounds, timePerRound, selectedMode) {
         if (username.isNotEmpty()) {
             lobbyViewModel.createOrUpdateLobby(
                 Lobby(
@@ -65,8 +64,7 @@ fun CreateGameScreen(
                     maxPlayers = maxPlayers,
                     rounds = rounds,
                     timeLimit = timePerRound.toInt(),
-                    mode = selectedMode,
-                    feature = selectedFeature
+                    mode = selectedMode
                 )
             )
         }
@@ -77,8 +75,7 @@ fun CreateGameScreen(
             val settings = GameSettings(
                 rounds = lobby?.rounds ?: rounds,
                 timeLimit = lobby?.timeLimit ?: timePerRound.toInt(),
-                mode = lobby?.mode ?: selectedMode,
-                feature = lobby?.feature ?: selectedFeature
+                mode = lobby?.mode ?: selectedMode
             )
             onStartGame(gameSeed, settings)
         }
@@ -93,92 +90,52 @@ fun CreateGameScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Bar Harmonisée
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().height(64.dp)) {
                 IconButton(
                     onClick = onBack,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .align(Alignment.CenterStart)
-                        .background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape)
-                        .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour", tint = Color.White)
-                }
+                    modifier = Modifier.align(Alignment.CenterStart).size(48.dp).background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+                ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour", tint = Color.White) }
 
-                Text(
-                    text = "Salon de jeu",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                Text(text = "Salon de jeu", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.align(Alignment.Center))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "Code d'invitation :",
-                color = Color.Gray,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-
+            Text(text = "Code d'invitation :", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Card du code
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(BackgroundMediumBlack)
-                    .border(1.dp, ScreenBorder, RoundedCornerShape(20.dp))
-                    .padding(horizontal = 20.dp),
+                modifier = Modifier.fillMaxWidth().height(80.dp).clip(RoundedCornerShape(20.dp)).background(BackgroundMediumBlack).border(1.dp, ScreenBorder, RoundedCornerShape(20.dp)).padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Icon(painterResource(id = R.drawable.qr_code), null, tint = IconsColor, modifier = Modifier.size(28.dp))
                 Text(text = gameSeed.toString(), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
-                IconButton(onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("Game Code", gameSeed.toString()))
-                    Toast.makeText(context, "Code copié !", Toast.LENGTH_SHORT).show()
-                }) {
-                    Icon(painterResource(id = R.drawable.clipboard), null, tint = IconsColor, modifier = Modifier.size(24.dp))
+                
+                Row {
+                    IconButton(onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("Game Code", gameSeed.toString())
+                        clipboard.setPrimaryClip(clip)
+                        Toast.makeText(context, "Code copié !", Toast.LENGTH_SHORT).show()
+                    }) { Icon(painterResource(id = R.drawable.clipboard), null, tint = IconsColor, modifier = Modifier.size(24.dp)) }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Liste des joueurs
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(BackgroundMediumBlack)
-                    .border(1.dp, ScreenBorder, RoundedCornerShape(24.dp))
-                    .padding(20.dp)
+                modifier = Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(24.dp)).background(BackgroundMediumBlack).border(1.dp, ScreenBorder, RoundedCornerShape(24.dp)).padding(20.dp)
             ) {
                 Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("JOUEURS", color = Secondaire, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                        Text("${lobby?.players?.size ?: 1}/$maxPlayers", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("JOUEURS", color = Secondaire, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                        Text("${lobby?.players?.size ?: 1}/$maxPlayers", color = Color.Gray, fontSize = 12.sp)
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         val players = lobby?.players ?: listOf(username)
                         items(players) { player ->
-                            PlayerRow(player, isHost = player == lobby?.host || (lobby == null && player == username))
+                            PlayerRow(player, isHost = player == lobby?.host)
                         }
                     }
                 }
@@ -186,22 +143,14 @@ fun CreateGameScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Bouton Réglages
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(BackgroundMediumBlack)
-                    .border(1.dp, ScreenBorder, RoundedCornerShape(16.dp))
-                    .clickable { showSettings = true }
-                    .padding(horizontal = 20.dp),
+                modifier = Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(16.dp)).background(BackgroundMediumBlack).border(1.dp, ScreenBorder, RoundedCornerShape(16.dp)).clickable { showSettings = true }.padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text("Réglages de la partie", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Text("$rounds rounds • ${timePerRound.toInt()}s • $selectedMode", color = Color.Gray, fontSize = 12.sp)
+                    Text("$rounds rounds • ${timePerRound.toInt()}s • Mode $selectedMode", color = Color.Gray, fontSize = 12.sp)
                 }
                 Icon(Icons.Default.Settings, null, tint = IconsColor, modifier = Modifier.size(24.dp))
             }
@@ -214,12 +163,9 @@ fun CreateGameScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
                 shape = RoundedCornerShape(16.dp),
                 enabled = username.isNotEmpty()
-            ) {
-                Text("LANCER LA PARTIE", fontSize = 16.sp, fontWeight = FontWeight.Black)
-            }
+            ) { Text("LANCER LA PARTIE", fontSize = 16.sp, fontWeight = FontWeight.Black) }
         }
 
-        // Overlay des Réglages
         AnimatedVisibility(
             visible = showSettings,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -232,8 +178,6 @@ fun CreateGameScreen(
                 onRoundsChange = { rounds = it },
                 time = timePerRound.toInt(),
                 onTimeChange = { timePerRound = it },
-                currentFeature = selectedFeature,
-                onFeatureChange = { selectedFeature = it },
                 maxPlayers = maxPlayers,
                 onMaxPlayersChange = { maxPlayers = it },
                 onClose = { showSettings = false }
@@ -250,49 +194,21 @@ fun SettingsOverlay(
     onRoundsChange: (Int) -> Unit,
     time: Int,
     onTimeChange: (Float) -> Unit,
-    currentFeature: String,
-    onFeatureChange: (String) -> Unit,
     maxPlayers: Int,
     onMaxPlayersChange: (Int) -> Unit,
     onClose: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundDeepBlack)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-    ) {
-        // Top Bar Harmonisée
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-        ) {
-            IconButton(
-                onClick = onClose,
-                modifier = Modifier
-                    .size(48.dp)
-                    .align(Alignment.CenterStart)
-                    .background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour", tint = Color.White)
-            }
-
-            Text(
-                text = "Réglages",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.align(Alignment.Center)
-            )
+    Column(modifier = Modifier.fillMaxSize().background(BackgroundDeepBlack).statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().height(64.dp)) {
+            IconButton(onClick = onClose, modifier = Modifier.size(48.dp).align(Alignment.CenterStart).background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)) 
+            { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour", tint = Color.White) }
+            Text("Réglages", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.align(Alignment.Center))
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        SettingLabel("Mode de jeu")
+        Text("Mode de jeu", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SelectableButton("Normal", currentMode == "Normal", Modifier.weight(1f)) { onModeChange("Normal") }
             SelectableButton("Fun", currentMode == "Fun", Modifier.weight(1f)) { onModeChange("Fun") }
@@ -301,103 +217,55 @@ fun SettingsOverlay(
         HorizontalDivider(Modifier.padding(vertical = 24.dp), color = ScreenBorder)
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            SettingLabel("Rounds", padding = 0.dp)
+            Text("Nombre de rounds", color = Color.Gray, fontWeight = FontWeight.Bold)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularIconButton(Icons.Default.Remove) { if (rounds > 1) onRoundsChange(rounds - 1) }
-                Text(rounds.toString(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 16.dp))
-                CircularIconButton(Icons.Default.Add) { if (rounds < 10) onRoundsChange(rounds + 1) }
+                IconButton(onClick = { if (rounds > 1) onRoundsChange(rounds - 1) }) { Icon(Icons.Default.Remove, null, tint = Color.White) }
+                Text(rounds.toString(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                IconButton(onClick = { if (rounds < 10) onRoundsChange(rounds + 1) }) { Icon(Icons.Default.Add, null, tint = Color.White) }
             }
-        }
-
-        HorizontalDivider(Modifier.padding(vertical = 24.dp), color = ScreenBorder)
-
-        SettingLabel("Temps par round")
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Slider(
-                value = time.toFloat(),
-                onValueChange = onTimeChange,
-                valueRange = 10f..60f,
-                steps = 9,
-                modifier = Modifier.weight(1f),
-                colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Text("${time}s", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.width(45.dp))
         }
 
         HorizontalDivider(Modifier.padding(vertical = 24.dp), color = ScreenBorder)
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            SettingLabel("Max Joueurs", padding = 0.dp)
+            Text("Max Joueurs", color = Color.Gray, fontWeight = FontWeight.Bold)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularIconButton(Icons.Default.Remove) { if (maxPlayers > 2) onMaxPlayersChange(maxPlayers - 1) }
-                Text(maxPlayers.toString(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 16.dp))
-                CircularIconButton(Icons.Default.Add) { if (maxPlayers < 20) onMaxPlayersChange(maxPlayers + 1) }
+                IconButton(onClick = { if (maxPlayers > 2) onMaxPlayersChange(maxPlayers - 1) }) { Icon(Icons.Default.Remove, null, tint = Color.White) }
+                Text(maxPlayers.toString(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                IconButton(onClick = { if (maxPlayers < 20) onMaxPlayersChange(maxPlayers + 1) }) { Icon(Icons.Default.Add, null, tint = Color.White) }
             }
         }
-        
+
+        HorizontalDivider(Modifier.padding(vertical = 24.dp), color = ScreenBorder)
+
+        Text("Temps par round", color = Color.Gray, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Slider(value = time.toFloat(), onValueChange = onTimeChange, valueRange = 10f..120f, steps = 11, modifier = Modifier.weight(1f))
+            Text("${time}s", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.width(50.dp))
+        }
+
         Spacer(modifier = Modifier.weight(1f))
         
-        Button(
-            onClick = onClose,
-            modifier = Modifier.fillMaxWidth().height(64.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Text("ENREGISTRER", fontSize = 16.sp, fontWeight = FontWeight.Black)
-        }
+        Button(onClick = onClose, modifier = Modifier.fillMaxWidth().height(64.dp), colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(16.dp)) 
+        { Text("ENREGISTRER", fontWeight = FontWeight.Black) }
     }
-}
-
-@Composable
-fun SettingLabel(text: String, padding: androidx.compose.ui.unit.Dp = 16.dp) {
-    Text(text, color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.padding(bottom = padding))
 }
 
 @Composable
 fun SelectableButton(text: String, isSelected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
-        modifier = modifier
-            .height(56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) Primary else BackgroundMediumBlack)
-            .border(1.dp, if (isSelected) Primary else ScreenBorder, RoundedCornerShape(12.dp))
-            .clickable { onClick() },
+        modifier = modifier.height(56.dp).clip(RoundedCornerShape(12.dp)).background(if (isSelected) Primary else BackgroundMediumBlack).border(1.dp, if (isSelected) Primary else ScreenBorder, RoundedCornerShape(12.dp)).clickable { onClick() },
         contentAlignment = Alignment.Center
-    ) {
-        Text(text, color = Color.White, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun CircularIconButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(BackgroundMediumBlack)
-            .border(1.dp, ScreenBorder, CircleShape)
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, null, tint = Color.White, modifier = Modifier.size(20.dp))
-    }
+    ) { Text(text, color = Color.White, fontWeight = FontWeight.Bold) }
 }
 
 @Composable
 fun PlayerRow(name: String, isHost: Boolean) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.05f))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.05f)).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier.size(32.dp).clip(CircleShape).background(if (isHost) Primary else Color.Gray),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(if (isHost) Primary else Color.Gray), contentAlignment = Alignment.Center) {
             Icon(if (isHost) Icons.Default.Star else Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(18.dp))
         }
         Spacer(modifier = Modifier.width(12.dp))

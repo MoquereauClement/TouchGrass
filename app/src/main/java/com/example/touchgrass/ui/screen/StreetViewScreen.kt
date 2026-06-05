@@ -9,9 +9,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +39,8 @@ fun StreetViewScreen(
     onQuit: () -> Unit
 ) {
     val context = LocalContext.current
+
+    // On récupère les états du ViewModel (StateFlow)
     val targetLocation by viewModel.targetLocation.collectAsState()
     val userCurrentLocation by viewModel.userCurrentLocation.collectAsState()
     val currentRound by viewModel.round.collectAsState()
@@ -49,50 +51,51 @@ fun StreetViewScreen(
     var showExitDialog by remember { mutableStateOf(false) }
     var showRoundOverlay by remember { mutableStateOf(false) }
 
-    // Animation de pulsation pour le timer si < 10s
+    // --- LOGIQUE D'ANIMATION (GAMIFICATION) ---
+
+    // Animation de pulsation quand il reste moins de 10 secondes
     val timerScale by animateFloatAsState(
         targetValue = if (timeLeft in 1..9 && timeLeft % 2 == 0) 1.2f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "timerPulsing"
     )
 
-    // Gestion de l'overlay de début de round
+    // Affichage temporaire du numéro de round au début de chaque manche
     LaunchedEffect(currentRound) {
         showRoundOverlay = true
         delay(2000)
         showRoundOverlay = false
     }
 
-    // Navigation automatique si le temps est écoulé
+    // Si le temps tombe à zéro, on force le passage à la carte
     LaunchedEffect(timeLeft) {
-        if (timeLeft <= 0) {
-            onNavigateToMap()
-        }
+        if (timeLeft <= 0) onNavigateToMap()
     }
 
-    // Gère le bouton retour physique du téléphone
-    BackHandler(enabled = true) {
-        showExitDialog = true
-    }
+    // Gestion du bouton "Retour" physique pour éviter de quitter par erreur
+    BackHandler { showExitDialog = true }
 
+    // On initialise Street View
     val streetView = remember {
-        StreetViewPanoramaView(context).apply {
-            onCreate(Bundle())
-        }
+        StreetViewPanoramaView(context).apply { onCreate(Bundle()) }
     }
 
+    // Gestion du cycle de vie de la vue Google Maps
     DisposableEffect(streetView) {
         streetView.onStart()
         streetView.onResume()
         
         streetView.getStreetViewPanoramaAsync { panorama ->
+            // Configuration des options de navigation
             panorama.isUserNavigationEnabled = true
             panorama.isPanningGesturesEnabled = true
             panorama.isZoomGesturesEnabled = true
             panorama.isStreetNamesEnabled = false
 
+            // Ecouteur pour savoir quand l'utilisateur se déplace
             panorama.setOnStreetViewPanoramaChangeListener { location: StreetViewPanoramaLocation? ->
-                if (location == null || location.panoId == null) {
+                if (location?.panoId == null) {
+                    // Si Street View ne trouve pas d'image (écran noir), on demande au VM d'en trouver un autre
                     viewModel.handleNoPanorama()
                 } else {
                     viewModel.updateCurrentLocation(location.position)
@@ -100,13 +103,15 @@ fun StreetViewScreen(
             }
         }
 
-        onDispose { 
+        // Nettoyage quand on quitte l'écran
+        onDispose {
             streetView.onPause()
             streetView.onStop()
             streetView.onDestroy()
         }
     }
 
+    // Mise à jour de la position de la caméra quand la cible change
     LaunchedEffect(targetLocation) {
         streetView.getStreetViewPanoramaAsync { panorama ->
             panorama.setPosition(userCurrentLocation ?: targetLocation, 5000)
@@ -114,16 +119,16 @@ fun StreetViewScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
+        // Intégration de la vue Street View classique dans Compose
         AndroidView(factory = { streetView }, modifier = Modifier.fillMaxSize())
 
-        // Top Bar Harmonisée
+        // Top Bar avec le bouton Retour et le HUD
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(16.dp)
         ) {
-            // Bouton Retour
             IconButton(
                 onClick = { showExitDialog = true },
                 modifier = Modifier
@@ -131,17 +136,13 @@ fun StreetViewScreen(
                     .background(BackgroundMediumBlack.copy(alpha = 0.9f), CircleShape)
                     .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Quitter la partie",
-                    tint = Color.White
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quitter", tint = Color.White)
             }
 
-            // HUD central (Round, Temps, Score)
+            // HUD central harmonisé
             Row(
                 modifier = Modifier
-                    .align(Alignment.Center)
+                    .align(Alignment.TopCenter)
                     .background(Color(0xFF1A1A1A).copy(alpha = 0.85f), RoundedCornerShape(24.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
                     .padding(horizontal = 20.dp, vertical = 10.dp),
@@ -155,7 +156,6 @@ fun StreetViewScreen(
                 Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color.White.copy(alpha = 0.2f)))
                 Spacer(modifier = Modifier.width(16.dp))
                 
-                // Timer Animé (Gamification : Pulsation)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.scale(timerScale)
@@ -174,6 +174,7 @@ fun StreetViewScreen(
             }
         }
 
+        // Bouton Map (FAB)
         FloatingActionButton(
             onClick = onNavigateToMap,
             containerColor = Color(0xFF52489C),
@@ -184,15 +185,10 @@ fun StreetViewScreen(
                 .size(80.dp)
                 .border(2.dp, Color(0xFFEDEDED), CircleShape)
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.map),
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = Color(0xFFEDEDED)
-            )
+            Icon(painterResource(id = R.drawable.map), null, modifier = Modifier.size(40.dp), tint = Color(0xFFEDEDED))
         }
 
-        // --- Overlay de début de Round (Gamification : Animation d'entrée) ---
+        // --- OVERLAY DE TRANSITION ---
         AnimatedVisibility(
             visible = showRoundOverlay,
             enter = fadeIn() + expandIn(expandFrom = Alignment.Center),
@@ -216,41 +212,21 @@ fun StreetViewScreen(
             }
         }
 
-        // Pop-up de confirmation
         if (showExitDialog) {
             AlertDialog(
                 onDismissRequest = { showExitDialog = false },
                 containerColor = BackgroundMediumBlack,
                 shape = RoundedCornerShape(28.dp),
-                title = {
-                    Text(
-                        "Quitter la partie ?",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Text(
-                        "Êtes-vous sûr de vouloir abandonner ? Votre progression dans ce round sera perdue.",
-                        color = Color.Gray
-                    )
-                },
+                title = { Text("Quitter ?", color = Color.White, fontWeight = FontWeight.Bold) },
+                text = { Text("Votre progression dans ce round sera perdue.", color = Color.Gray) },
                 confirmButton = {
                     Button(
-                        onClick = {
-                            showExitDialog = false
-                            onQuit()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("QUITTER", fontWeight = FontWeight.Bold)
-                    }
+                        onClick = { onQuit() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) { Text("QUITTER", fontWeight = FontWeight.Bold) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showExitDialog = false }) {
-                        Text("CONTINUER", color = Color.White)
-                    }
+                    TextButton(onClick = { showExitDialog = false }) { Text("CONTINUER", color = Color.White) }
                 }
             )
         }

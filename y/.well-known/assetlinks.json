@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.example.touchgrass",
+    "sha256_cert_fingerprints": ["7C:C4:8E:25:35:10:EE:5A:8F:39:A1:47:E0:81:A7:2B:BB:8A:C6:F1:68:E9:FD:FE:23:12:AE:04:DA:A6:C4:DD"]
+  }
+}]

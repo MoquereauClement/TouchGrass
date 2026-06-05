@@ -10,11 +10,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
-import androidx.compose.ui.draw.scale
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -37,7 +37,10 @@ fun MenuScreen(
     onCreateGameClick: () -> Unit,
     onLogout: () -> Unit
 ) {
+    // On récupère le pseudo depuis le ViewModel
     val username by profileViewModel.username.collectAsState()
+    
+    // États pour gérer l'affichage des boîtes de dialogue
     var showProfileDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
     var tempUsername by remember { mutableStateOf(username) }
@@ -51,14 +54,13 @@ fun MenuScreen(
             .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // Barre supérieure harmonisée (64dp)
+        // Barre supérieure avec Logo, Titre et Profil
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
                 .align(Alignment.TopCenter)
         ) {
-            // Logo à gauche
             Icon(
                 painter = painterResource(id = R.drawable.ic_launcher_foreground),
                 contentDescription = "Logo",
@@ -69,7 +71,6 @@ fun MenuScreen(
                     .align(Alignment.CenterStart)
             )
 
-            // Titre au centre
             Text(
                 text = "TouchGrass",
                 color = Color.White,
@@ -78,6 +79,7 @@ fun MenuScreen(
                 modifier = Modifier.align(Alignment.Center)
             )
 
+            // Bloc Profil + Déconnexion
             Row(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -110,7 +112,7 @@ fun MenuScreen(
             }
         }
 
-        // Menu Principal
+        // Liste des boutons du menu principal
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -127,7 +129,7 @@ fun MenuScreen(
 
             MenuButton(
                 title = "Jouer une seed",
-                subtitle = "Utilise un code pour jouer avec vos amis",
+                subtitle = "Utiliser un code pour une partie fixe",
                 iconRes = R.drawable.iconsmultiplayer,
                 onClick = { showJoinDialog = true }
             )
@@ -136,7 +138,7 @@ fun MenuScreen(
 
             MenuButton(
                 title = "Créer un salon",
-                subtitle = "Inviter des amis en multi",
+                subtitle = "Inviter des amis en multijoueur",
                 iconRes = R.drawable.iconsadd,
                 onClick = onCreateGameClick
             )
@@ -149,7 +151,7 @@ fun MenuScreen(
             )
         }
 
-        // Boîte de dialogue Profil
+        // Popup pour modifier son pseudonyme
         if (showProfileDialog) {
             AlertDialog(
                 onDismissRequest = { showProfileDialog = false },
@@ -157,23 +159,16 @@ fun MenuScreen(
                 shape = RoundedCornerShape(24.dp),
                 title = { Text("Modifier le profil", color = Color.White, fontWeight = FontWeight.Black) },
                 text = {
-                    Column {
-                        Text("Entrez votre nouveau pseudo :", color = Color.Gray, fontSize = 14.sp)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = tempUsername,
-                            onValueChange = { tempUsername = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Primary,
-                                unfocusedBorderColor = ScreenBorder,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(12.dp)
+                    OutlinedTextField(
+                        value = tempUsername,
+                        onValueChange = { tempUsername = it },
+                        label = { Text("Nouveau pseudo") },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
                         )
-                    }
+                    )
                 },
                 confirmButton = {
                     Button(
@@ -184,57 +179,27 @@ fun MenuScreen(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                    ) {
-                        Text("VALIDER", fontWeight = FontWeight.Black)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showProfileDialog = false }) {
-                        Text("ANNULER", color = Color.Gray)
-                    }
+                    ) { Text("VALIDER") }
                 }
             )
         }
 
-        // Boîte de dialogue Jouer une Seed
+        // Popup pour entrer une seed manuellement
         if (showJoinDialog) {
             AlertDialog(
                 onDismissRequest = { showJoinDialog = false },
                 containerColor = BackgroundMediumBlack,
                 shape = RoundedCornerShape(24.dp),
-                title = {
-                    Text(
-                        "Jouer une seed",
-                        color = Color.White,
-                        fontWeight = FontWeight.Black,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
+                title = { Text("Jouer une seed", color = Color.White, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "Entrez le code à 6 chiffres :",
-                            color = Color.Gray,
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center
-                        )
+                        Text("Entrez le code à 6 chiffres :", color = Color.Gray, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
                             value = gameCode,
                             onValueChange = { if (it.length <= 6) gameCode = it },
-                            textStyle = TextStyle(
-                                color = Color.White,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Black,
-                                textAlign = TextAlign.Center
-                            ),
+                            textStyle = TextStyle(color = Color.White, fontSize = 24.sp, textAlign = TextAlign.Center),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Primary,
-                                unfocusedBorderColor = ScreenBorder,
-                                cursorColor = Primary
-                            ),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -243,29 +208,22 @@ fun MenuScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            val seed = gameCode.toLongOrNull()
-                            if (seed != null) {
-                                onJoinMultiplayerClick(seed)
-                                showJoinDialog = false
+                            gameCode.toLongOrNull()?.let { 
+                                onJoinMultiplayerClick(it)
+                                showJoinDialog = false 
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                        enabled = gameCode.length == 6,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("REJOINDRE", fontWeight = FontWeight.Black)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showJoinDialog = false }) {
-                        Text("ANNULER", color = Color.Gray)
-                    }
+                        enabled = gameCode.length == 6
+                    ) { Text("REJOINDRE") }
                 }
             )
         }
     }
 }
 
+/**
+ * Composant réutilisable pour les boutons du menu.
+ */
 @Composable
 fun MenuButton(title: String, subtitle: String, iconRes: Int, onClick: () -> Unit) {
     Row(
@@ -280,9 +238,7 @@ fun MenuButton(title: String, subtitle: String, iconRes: Int, onClick: () -> Uni
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(BackgroundDeepBlack, RoundedCornerShape(14.dp)),
+            modifier = Modifier.size(48.dp).background(BackgroundDeepBlack, RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(painterResource(id = iconRes), null, tint = Primary, modifier = Modifier.size(24.dp))

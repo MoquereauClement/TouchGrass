@@ -34,6 +34,9 @@ import com.google.android.gms.maps.model.*
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
+/**
+ * Écran qui affiche le résultat du round : distance, score et animation sur la carte.
+ */
 @Composable
 fun ResultScreen(
     streetViewViewModel: StreetViewViewModel = viewModel(),
@@ -43,6 +46,7 @@ fun ResultScreen(
 ) {
     val context = LocalContext.current
 
+    // On récupère les positions (cible et choix utilisateur) depuis les ViewModels
     val targetLoc = remember { streetViewViewModel.targetLocation.value }
     val guessedLoc = remember { mapViewModel.guessedLocation.value }
     val currentRound = remember { streetViewViewModel.round.value }
@@ -50,57 +54,62 @@ fun ResultScreen(
     val totalScoreAtStart = remember { streetViewViewModel.totalScore.value }
     val gameSeed by streetViewViewModel.gameSeed.collectAsState()
     
+    // Calcul de la distance réelle entre les deux points
     val distance = remember(targetLoc, guessedLoc) {
         guessedLoc?.let { mapViewModel.calculateDistance(targetLoc, it) }
     }
 
+    // Calcul du score via la formule du ViewModel
     val roundPoints = remember(distance) {
         distance?.let { streetViewViewModel.calculatePoints(it) } ?: 0
     }
 
+    // --- ÉTATS POUR LES ANIMATIONS ---
     var startScoreAnim by remember { mutableStateOf(false) }
     var showConfetti by remember { mutableStateOf(false) }
     var googleMapRef by remember { mutableStateOf<GoogleMap?>(null) }
     
-    // Animation du chiffre
+    // Animation du compteur de points (monte de 0 à roundPoints)
     val animatedPoints by animateIntAsState(
         targetValue = if (startScoreAnim) roundPoints else 0,
         animationSpec = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
         label = "scoreAnim"
     )
 
-    // Animation de la barre de progression
+    // Animation de la barre horizontale
     val progressAnim by animateFloatAsState(
         targetValue = if (startScoreAnim) roundPoints / 5000f else 0f,
         animationSpec = tween(durationMillis = 2000, easing = FastOutSlowInEasing)
     )
 
+    // Couleur dynamique (Rouge -> Vert) selon le score
     val barColor by animateColorAsState(
         targetValue = when {
-            roundPoints >= 4500 -> Color(0xFF4CAF50)
-            roundPoints >= 3000 -> Color(0xFFFFEB3B)
-            roundPoints >= 1000 -> Color(0xFFFF9800)
-            else -> Color(0xFFF44336)
+            roundPoints >= 4500 -> Color(0xFF4CAF50) // Vert
+            roundPoints >= 3000 -> Color(0xFFFFEB3B) // Jaune
+            roundPoints >= 1000 -> Color(0xFFFF9800) // Orange
+            else -> Color(0xFFF44336) // Rouge
         }
     )
 
+    // Echelle pour faire apparaître le texte de mention (INCROYABLE, etc)
     val gradeScale = remember { Animatable(0f) }
 
-    // --- LOGIQUE D'ANIMATION CINÉMATIQUE ---
+    // --- LANCEMENT DES ANIMATIONS ---
     LaunchedEffect(Unit) {
         delay(300)
         startScoreAnim = true
         
-        // Attendre que la carte soit prête
+        // On attend que le composant Google Map soit prêt avant d'animer la caméra
         while (googleMapRef == null) delay(100)
         val map = googleMapRef!!
 
         if (guessedLoc != null) {
-            // 1. Départ sur ton guess
+            // 1. Focus sur le clic du joueur
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(guessedLoc, 10f))
             delay(1000)
             
-            // 2. Envol et recentrage intelligent pour éviter l'overlay du score
+            // 2. Création de la vue d'ensemble (Zoom Out)
             val baseBounds = LatLngBounds.Builder()
                 .include(targetLoc)
                 .include(guessedLoc)
@@ -108,20 +117,17 @@ fun ResultScreen(
             
             val latSpan = baseBounds.northeast.latitude - baseBounds.southwest.latitude
             
-            // On ajoute un point fictif au Nord pour descendre la vue
-            // Cela libère de l'espace en haut pour le HUD du score (environ 90% du span en plus)
-            val shiftedBounds = LatLngBounds.Builder()
-                .include(targetLoc)
-                .include(guessedLoc)
-                .include(LatLng(baseBounds.northeast.latitude + latSpan * 0.9, baseBounds.center.longitude))
-                .build()
+            // ASTUCE : On ajoute un point invisible au dessus du trajet pour décaler 
+            // la vue vers le bas, sinon les marqueurs sont cachés par le cadre du score.
+            val virtualNorth = LatLng(baseBounds.northeast.latitude + latSpan * 1.0, baseBounds.center.longitude)
+            val finalBounds = LatLngBounds.Builder()
+                .include(targetLoc).include(guessedLoc).include(virtualNorth).build()
             
-            map.animateCamera(CameraUpdateFactory.newLatLngBounds(shiftedBounds, 150), 2500, null)
-        } else {
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 5f), 1500, null)
+            map.animateCamera(CameraUpdateFactory.newLatLngBounds(finalBounds, 200), 2500, null)
         }
 
         delay(1500)
+        // Si le score est top, on fait la fête !
         if (roundPoints >= 4500) {
             showConfetti = true
             gradeScale.animateTo(1.2f, animationSpec = tween(500, easing = EaseOutBack))
@@ -129,6 +135,7 @@ fun ResultScreen(
         }
     }
 
+    // Libellé de félicitation
     val gradeText = remember(roundPoints) {
         when {
             roundPoints >= 4950 -> "PARFAIT !"
@@ -151,6 +158,7 @@ fun ResultScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Affichage de la carte et des tracés
         AndroidView(
             factory = { mapView },
             update = { view ->
@@ -158,10 +166,17 @@ fun ResultScreen(
                     if (googleMapRef == null) {
                         googleMapRef = googleMap
                         googleMap.clear()
+                        // Ajout du drapeau cible
                         googleMap.addMarker(MarkerOptions().position(targetLoc).icon(bitmapDescriptorFromVector(context, R.drawable.target_landmark)))
                         guessedLoc?.let { guess ->
+                            // Ajout du marqueur joueur
                             googleMap.addMarker(MarkerOptions().position(guess).icon(bitmapDescriptorFromVector(context, R.drawable.my_landmark)))
-                            googleMap.addPolyline(PolylineOptions().add(targetLoc, guess).color(android.graphics.Color.DKGRAY).width(8f).pattern(listOf(Dash(20f), Gap(10f))))
+                            // Tracé de la ligne en pointillés
+                            googleMap.addPolyline(PolylineOptions()
+                                .add(targetLoc, guess)
+                                .color(android.graphics.Color.DKGRAY)
+                                .width(8f)
+                                .pattern(listOf(Dash(20f), Gap(10f))))
                         }
                     }
                 }
@@ -169,11 +184,10 @@ fun ResultScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        if (showConfetti) {
-            ConfettiEffect()
-        }
+        // Affichage des confettis (uniquement si score élevé)
+        if (showConfetti) { ConfettiEffect() }
 
-        // Overlay Score en haut
+        // --- INTERFACE DU SCORE (Overlay) ---
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -195,21 +209,9 @@ fun ResultScreen(
             
             Text(text = "$animatedPoints", fontSize = 56.sp, fontWeight = FontWeight.Black, color = Color.White)
             
-            // Barre de performance
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(12.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.1f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(progressAnim)
-                        .fillMaxHeight()
-                        .clip(CircleShape)
-                        .background(barColor)
-                )
+            // Barre de progression visuelle
+            Box(modifier = Modifier.fillMaxWidth().height(12.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.1f))) {
+                Box(modifier = Modifier.fillMaxWidth(progressAnim).fillMaxHeight().clip(CircleShape).background(barColor))
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -217,7 +219,7 @@ fun ResultScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             distance?.let {
-                Text("${String.format("%.1f", it)} km de distance", color = Color.White.copy(alpha = 0.9f), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("${String.format("%.1f", it)} km de distance", color = Color.White.copy(alpha = 0.9f), fontSize = 15.sp)
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -226,20 +228,13 @@ fun ResultScreen(
             Text("SCORE TOTAL : ${totalScoreAtStart + animatedPoints}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
 
-        // Bas de l'écran
+        // Section basse : Code de partie et bouton de progression
         Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 32.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             gameSeed?.let {
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                ) {
+                Box(modifier = Modifier.background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 4.dp)) {
                     Text("CODE : $it", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
@@ -260,6 +255,9 @@ fun ResultScreen(
     }
 }
 
+/**
+ * Système de particules simple pour simuler des confettis.
+ */
 @Composable
 fun ConfettiEffect() {
     val infiniteTransition = rememberInfiniteTransition(label = "confetti")
@@ -287,6 +285,9 @@ fun ConfettiEffect() {
     }
 }
 
+/**
+ * Modèle de données pour un seul confetti.
+ */
 data class ConfettiParticle(
     val xPos: Float = Random.nextFloat(),
     val color: Color = Color(Random.nextFloat(), Random.nextFloat(), Random.nextFloat(), 1f),

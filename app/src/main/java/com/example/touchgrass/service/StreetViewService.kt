@@ -4,6 +4,9 @@ import com.example.touchgrass.model.StreetViewLocation
 import com.google.android.gms.maps.model.LatLng
 import kotlin.random.Random
 
+/**
+ * Service pour gérer la logique de génération des positions
+ */
 class StreetViewService {
     private var countrySeeds: List<StreetViewLocation> = emptyList()
 
@@ -12,34 +15,34 @@ class StreetViewService {
     }
 
     /**
-     * Génère une position déterministe basée sur une graine, un round et un nombre d'essais.
-     * Cela permet à plusieurs joueurs d'avoir exactement les mêmes lieux pour un même code.
+     * Génère une position aléatoire mais fixe pour un même code (seed).
+     * Cela permet d'avoir les mêmes lieux en mode multijoueur
      */
     fun getDeterministicLocation(gameSeed: Long, round: Int, retryCount: Int): StreetViewLocation {
-        // Création d'une graine unique pour ce tirage spécifique
-        val combinedSeed = gameSeed + (round * 1000) + retryCount
-        val random = Random(combinedSeed)
+        val uniqueSeed = gameSeed + (round * 1000) + retryCount
+        val random = Random(uniqueSeed)
 
-        val seed = if (countrySeeds.isNotEmpty()) {
-            countrySeeds[random.nextInt(countrySeeds.size)]
+        val country = if (countrySeeds.isNotEmpty()) {
+            val index = random.nextInt(countrySeeds.size)
+            countrySeeds[index]
         } else {
             StreetViewLocation(LatLng(48.8584, 2.2945), "France")
         }
 
-        val randomLatLng = if (seed.southwest != null && seed.northeast != null &&
-            seed.southwest.latitude < seed.northeast.latitude &&
-            seed.southwest.longitude < seed.northeast.longitude) {
-            // Tirage aléatoire dans la Bounding Box du pays
-            val lat = random.nextDouble(seed.southwest.latitude, seed.northeast.latitude)
-            val lng = random.nextDouble(seed.southwest.longitude, seed.northeast.longitude)
-            LatLng(lat, lng)
+        // Calcul d'une position aléatoire dans la zone du pays (Bounding Box)
+        val finalLatLng = if (country.southwest != null && country.northeast != null &&
+            country.southwest.latitude < country.northeast.latitude) {
+            
+            val randomLat = random.nextDouble(country.southwest.latitude, country.northeast.latitude)
+            val randomLng = random.nextDouble(country.southwest.longitude, country.northeast.longitude)
+            LatLng(randomLat, randomLng)
         } else {
-            // Fallback : Jitter (env +/- 20km)
-            val latJitter = (random.nextDouble() - 0.5) * 0.4
-            val lngJitter = (random.nextDouble() - 0.5) * 0.4
-            LatLng(seed.coordinates.latitude + latJitter, seed.coordinates.longitude + lngJitter)
+            // Décalage aléatoire autour du point central si on n'a pas de zone précise
+            val offsetLat = (random.nextDouble() - 0.5) * 0.4
+            val offsetLng = (random.nextDouble() - 0.5) * 0.4
+            LatLng(country.coordinates.latitude + offsetLat, country.coordinates.longitude + offsetLng)
         }
         
-        return seed.copy(coordinates = randomLatLng)
+        return country.copy(coordinates = finalLatLng)
     }
 }

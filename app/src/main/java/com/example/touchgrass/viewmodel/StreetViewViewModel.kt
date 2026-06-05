@@ -33,16 +33,10 @@ data class GeoProperties(
 )
 
 @Serializable
-data class GeoGeometry(
-    val type: String,
-    val coordinates: JsonElement
-)
+data class GeoGeometry(val type: String, val coordinates: JsonElement)
 
 @Serializable
-data class GeoFeature(
-    val properties: GeoProperties,
-    val geometry: GeoGeometry? = null
-)
+data class GeoFeature(val properties: GeoProperties, val geometry: GeoGeometry? = null)
 
 @Serializable
 data class GeoRoot(val features: List<GeoFeature>)
@@ -52,6 +46,7 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
     private val gameRepository = GameRepository()
     private val json = Json { ignoreUnknownKeys = true }
 
+    // États du jeu
     private val _targetLocation = MutableStateFlow(LatLng(48.8584, 2.2945))
     val targetLocation: StateFlow<LatLng> = _targetLocation.asStateFlow()
 
@@ -80,7 +75,6 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
     val timeLeft: StateFlow<Int> = _timeLeft.asStateFlow()
 
     private var timerJob: Job? = null
-    
     private var currentRetryCount = 0
 
     init {
@@ -111,15 +105,11 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
                 }
 
                 withContext(Dispatchers.Main) {
-                    if (seeds.isNotEmpty()) {
-                        streetViewService.setSeeds(seeds)
-                    }
-                    if (_gameSeed.value == null) {
-                        startNewGame()
-                    }
+                    if (seeds.isNotEmpty()) streetViewService.setSeeds(seeds)
+                    if (_gameSeed.value == null) startNewGame()
                 }
             } catch (e: Exception) {
-                Log.e("StreetViewViewModel", "Erreur GeoJSON: ${e.message}", e)
+                Log.e("StreetViewViewModel", "Erreur GeoJSON: ${e.message}")
                 if (_gameSeed.value == null) startNewGame()
             }
         }
@@ -160,11 +150,9 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
         _timeLimit.value = finalSettings.timeLimit
         _timeLeft.value = finalSettings.timeLimit
         
-        // Si c'est une nouvelle partie solo sans settings, on enregistre les par défaut pour le partage
+        // Enregistre les réglages pour le partage
         if (settings == null) {
-            viewModelScope.launch {
-                gameRepository.saveGameSettings(finalSeed, finalSettings)
-            }
+            viewModelScope.launch { gameRepository.saveGameSettings(finalSeed, finalSettings) }
         }
         
         generateRandomLocation()
@@ -181,9 +169,7 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun stopTimer() {
-        timerJob?.cancel()
-    }
+    fun stopTimer() { timerJob?.cancel() }
 
     fun saveAndStartGame(seed: Long, settings: GameSettings) {
         viewModelScope.launch {
@@ -196,7 +182,6 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             val settings = gameRepository.getGameSettings(seed)
             if (settings != null) {
-                // On utilise les réglages récupérés pour lancer la partie identique
                 startNewGame(seed, settings)
                 onResult(true)
             } else {
@@ -212,12 +197,8 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
         _currentCountry.value = location.countryName
         _userCurrentLocation.value = null 
 
-        // LOG POUR LA PRÉSENTATION (TRICHE FACILE)
-        Log.d("TOUCHGRASS_DEBUG", "--------------------------------------")
-        Log.d("TOUCHGRASS_DEBUG", "CIBLE ROUND ${_round.value} :")
-        Log.d("TOUCHGRASS_DEBUG", "Lat: ${location.coordinates.latitude}, Lng: ${location.coordinates.longitude}")
-        Log.d("TOUCHGRASS_DEBUG", "Lien: https://www.google.com/maps/@${location.coordinates.latitude},${location.coordinates.longitude},18z")
-        Log.d("TOUCHGRASS_DEBUG", "--------------------------------------")
+        // Log utile pour la démonstration orale
+        Log.d("TOUCHGRASS_DEBUG", "CIBLE ROUND ${_round.value} : https://www.google.com/maps/@${location.coordinates.latitude},${location.coordinates.longitude},18z")
     }
     
     fun handleNoPanorama() {
@@ -226,7 +207,6 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun calculatePoints(distanceInKm: Double): Int {
-        // Courbe GeoGuessr équilibrée
         val points = 5000.0 * exp(-0.0006 * distanceInKm)
         return if (distanceInKm > 15000.0) 0 else points.toInt().coerceIn(0, 5000)
     }
@@ -243,7 +223,5 @@ class StreetViewViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun updateCurrentLocation(position: LatLng) {
-        _userCurrentLocation.value = position
-    }
+    fun updateCurrentLocation(position: LatLng) { _userCurrentLocation.value = position }
 }

@@ -21,15 +21,22 @@ import com.example.touchgrass.ui.theme.ScreenBorder
 import com.example.touchgrass.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * Écran de connexion et d'inscription.
+ * Si l'email n'existe pas, un compte est créé automatiquement.
+ */
 @Composable
 fun LoginScreen(
     profileViewModel: ProfileViewModel = viewModel(),
     onLoginSuccess: () -> Unit
 ) {
+    // États pour les champs de saisie
     var email by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+    
+    // On utilise un scope de coroutine pour les appels asynchrones (Firebase)
     val scope = rememberCoroutineScope()
 
     Box(
@@ -40,7 +47,7 @@ fun LoginScreen(
             .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // Top Bar - Alignée
+        // En-tête avec le nom de l'application
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -56,6 +63,7 @@ fun LoginScreen(
             )
         }
 
+        // Formulaire central
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -77,31 +85,30 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 40.dp)
             )
 
+            // Champ Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { 
                     email = it
-                    errorMessage = null 
+                    errorMessage = null // On efface l'erreur quand l'utilisateur écrit
                 },
                 label = { Text("Adresse e-mail") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                isError = errorMessage?.contains("e-mail", ignoreCase = true) == true,
+                isError = errorMessage != null,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Primary,
                     unfocusedBorderColor = ScreenBorder,
-                    focusedLabelColor = Primary,
-                    unfocusedLabelColor = Color.Gray,
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    errorBorderColor = Color.Red
+                    unfocusedTextColor = Color.White
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Champ Pseudo
             OutlinedTextField(
                 value = username,
                 onValueChange = { 
@@ -111,19 +118,17 @@ fun LoginScreen(
                 label = { Text("Pseudo") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                isError = errorMessage?.contains("pseudo", ignoreCase = true) == true,
+                isError = errorMessage != null,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Primary,
                     unfocusedBorderColor = ScreenBorder,
-                    focusedLabelColor = Primary,
-                    unfocusedLabelColor = Color.Gray,
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    errorBorderColor = Color.Red
+                    unfocusedTextColor = Color.White
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
 
+            // Affichage de l'erreur si elle existe
             if (errorMessage != null) {
                 Text(
                     text = errorMessage!!,
@@ -134,13 +139,16 @@ fun LoginScreen(
             }
         }
 
+        // Bouton de connexion en bas
         Button(
             onClick = {
                 if (email.isNotBlank() && username.isNotBlank()) {
                     isLoading = true
                     scope.launch {
+                        // On vérifie si l'utilisateur existe déjà ou si le pseudo est pris
                         val redundancyError = profileViewModel.checkUserRedundancy(email.trim(), username.trim())
                         if (redundancyError == null) {
+                            // Connexion réussie
                             profileViewModel.login(email.trim(), username.trim())
                             onLoginSuccess()
                         } else {
